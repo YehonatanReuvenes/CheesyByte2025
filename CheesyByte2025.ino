@@ -26,7 +26,7 @@ void loop(){
     std::pair<int, int> driveOut = tankDriveOutputs(pwmDrive_x,pwmDrive_y);
     outRightWheel = driveOut.first;
     outLeftWheel = driveOut.second;
-    
+    outWepond = pwmWepond;
 
     analogWrite(pwmOutPinWepond, outWepond);
     analogWrite(pwmOutPinRightWheel, outRightWheel);
