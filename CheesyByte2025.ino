@@ -17,9 +17,9 @@ void setup(){
 }
 
 void loop(){
-    int pwmWepond = pulseIn(pwmInPinWepond, HIGH);
-    int pwmDrive_x = pulseIn(pwmInPinDrive_x, HIGH);
-    int pwmDrive_y = pulseIn(pwmInPinDrive_y, HIGH);
+    pwmWepond = pulseIn(pwmInPinWepond, HIGH);
+    pwmDrive_x = pulseIn(pwmInPinDrive_x, HIGH);
+    pwmDrive_y = pulseIn(pwmInPinDrive_y, HIGH);
 
     int outWepond, outRightWheel, outLeftWheel;
 
