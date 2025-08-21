@@ -1,48 +1,129 @@
-struct pair {
-    int first;
-    int second;
-    pair(int first, int second) : first(first), second(second) {}
+#include <Servo.h>
+
+const int IN_PIN_WEPOND   = 11;
+const int IN_PIN_X  = 9;
+const int IN_PIN_Y  = 10;
+
+const int OUT_PIN_WEPOND     = 5;  
+const int OUT_PIN_RIGHT_WHEEL = 6;  
+const int OUT_PIN_LEFT_WHEEL  = 3;  
+
+const int MAX_WHEEL_SPEED = 50;
+
+struct Arcade{
+  double azi;
+  double lat;
 };
 
-const int pwmInPinWepond   = 11;
-const int pwmInPinDrive_x  = 10;
-const int pwmInPinDrive_y  = 9;
+struct Tank{
+  double right;
+  double left;
 
-const int pwmOutPinWepond     = 5;  
-const int pwmOutPinRightWheel = 3;  
-const int pwmOutPinLeftWheel  = 6;  
+  void update(Arcade inputs){
+    if (inputs.azi == 0 && inputs.lat == 0){
+      right = 1000;
+      left = 1000;
+      return;
+    }
+    right = inputs.lat - inputs.azi;
+    left = inputs.lat + inputs.azi;
+    double high = max(right, left);
+    if(high > 1){
+      right = right / high;
+      left = left / high;
+    }
 
-unsigned long pwmWepond, pwmDrive_x, pwmDrive_y;
+    right = right * MAX_WHEEL_SPEED * 10 + 1000;
+    left = left * MAX_WHEEL_SPEED * 10  + 1000;
+    right = max(1000, min(1000 + MAX_WHEEL_SPEED * 10, right));
+    left = max(1000, min(1000 + MAX_WHEEL_SPEED * 10, left));
+  }
+};
 
-pair tankDriveOutputs(int x, int y) {
-    x = 2 * (x - 127);           
-    y = 2 * max(0, y - 127);     
-
-    int right = min(max(0, y - x), 255);
-    int left  = min(max(0, y + x), 255);
-
-    return pair(right, left);
-}
+Servo motorWepond;
+Servo motorRight;
+Servo motorLeft;
+Tank tank;
+Arcade arcade;
 
 void setup() {
-    pinMode(pwmOutPinWepond, OUTPUT);
-    pinMode(pwmOutPinRightWheel, OUTPUT);
-    pinMode(pwmOutPinLeftWheel, OUTPUT);
+  pinMode(IN_PIN_WEPOND, INPUT);
+  pinMode(IN_PIN_X, INPUT);
+  pinMode(IN_PIN_Y, INPUT);
 
-    // (Optional) set input modes if your receiver needs it:
-    pinMode(pwmInPinWepond, INPUT);
-    pinMode(pwmInPinDrive_x, INPUT);
-    pinMode(pwmInPinDrive_y, INPUT);
+  motorWepond.attach(OUT_PIN_WEPOND);
+  motorRight.attach(OUT_PIN_RIGHT_WHEEL);
+  motorLeft.attach(OUT_PIN_LEFT_WHEEL);
+
+  motorWepond.writeMicroseconds(2000);
+  motorRight.writeMicroseconds(2000);
+  motorLeft.writeMicroseconds(2000);
+  delay(3000);
+  motorWepond.writeMicroseconds(1000);
+  motorRight.writeMicroseconds(1000);
+  motorLeft.writeMicroseconds(1000);
+
+  Serial.begin(9600); 
+
+  // motorRight.writeMicroseconds(2000);
+  // motorLeft.writeMicroseconds(2000);
+  // delay(4000);
+  // //   motorRight.writeMicroseconds(1000);
+  // motorLeft.writeMicroseconds(1000);
+  // delay(4000);
+
 }
 
 void loop() {
-    pwmWepond  = pulseIn(pwmInPinWepond,  HIGH);
-    pwmDrive_x = pulseIn(pwmInPinDrive_x, HIGH);
-    pwmDrive_y = pulseIn(pwmInPinDrive_y, HIGH);
+  int inDrive_x = pulseIn(IN_PIN_X, HIGH, 25000);
+  int inDrive_y = pulseIn(IN_PIN_Y, HIGH, 25000);
+  
+  arcade.azi = max(-1, min(1, (inDrive_x / 500.0) - 3));
+  arcade.lat = max(0, min(1, (inDrive_y / 500.0) - 3));
 
-    pair driveOut = tankDriveOutputs(pwmDrive_x, pwmDrive_y);
+  if(inDrive_x == 1000.0 || inDrive_y == 1000.0){
+    arcade.azi = 0;
+    arcade.lat = 0;
+  }
 
-    analogWrite(pwmOutPinWepond,     pwmWepond);
-    analogWrite(pwmOutPinRightWheel, driveOut.first);
-    analogWrite(pwmOutPinLeftWheel,  driveOut.second);
+  tank.update(arcade);
+
+
+  int inWepond = roundTo25(pulseIn(IN_PIN_WEPOND, HIGH, 25000));
+  int outWepond = max(1000, min(2000, inWepond));
+  if(inWepond == 1075 || inWepond == 1050){
+    outWepond = 1000;
+  }
+
+  
+  motorWepond.writeMicroseconds(outWepond);
+  motorRight.writeMicroseconds(tank.right);
+  motorLeft.writeMicroseconds(tank.left);
+
+  // Serial.print(inWepond);
+  // Serial.print(", ");
+  // Serial.print(inDrive_x);
+  // Serial.print(", ");
+  // Serial.println(inDrive_y);
+
+  // Serial.print(outWepond);
+  // Serial.print(", ");
+  // Serial.print(tank.right);
+  // Serial.print(", ");
+  // Serial.println(tank.left);
+
+  // Serial.print(arcade.azi);
+  // Serial.print(", ");
+  // Serial.println(arcade.lat);
+
+  // Serial.println();
+  // Serial.println();
+  // Serial.println();
+
+
+  delay(25);
+}
+
+int roundTo25(int n) {
+    return (n >= 0) ? ((n + 12) / 25) * 25 : ((n - 12) / 25) * 25;
 }
