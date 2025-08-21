@@ -4,11 +4,14 @@ const int IN_PIN_WEPOND   = 11;
 const int IN_PIN_X  = 9;
 const int IN_PIN_Y  = 10;
 
-const int OUT_PIN_WEPOND     = 5;  
-const int OUT_PIN_RIGHT_WHEEL = 6;  
-const int OUT_PIN_LEFT_WHEEL  = 3;  
+const int OUT_PIN_WEPOND = 6;  
+const int OUT_PIN_RIGHT_WHEEL = 3;  
+const int OUT_PIN_LEFT_WHEEL  = 5;  
 
-const int MAX_WHEEL_SPEED = 50;
+const int MAX_SPEED = 100;
+const double RIGHT_ADAPTATION = 1;
+const double LEFT_ADAPTATION = 0.5;
+
 
 struct Arcade{
   double azi;
@@ -33,10 +36,13 @@ struct Tank{
       left = left / high;
     }
 
-    right = right * MAX_WHEEL_SPEED * 10 + 1000;
-    left = left * MAX_WHEEL_SPEED * 10  + 1000;
-    right = max(1000, min(1000 + MAX_WHEEL_SPEED * 10, right));
-    left = max(1000, min(1000 + MAX_WHEEL_SPEED * 10, left));
+    right *= RIGHT_ADAPTATION;
+    left *= LEFT_ADAPTATION;
+
+    right = right * MAX_SPEED * 10 + 1000;
+    left = left * MAX_SPEED * 10  + 1000;
+    right = max(1000, min(1000 + MAX_SPEED * 10, right));
+    left = max(1000, min(1000 + MAX_SPEED * 10, left));
   }
 };
 
